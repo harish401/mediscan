@@ -12,17 +12,18 @@ export class GroqService {
     // Initialize Groq SDK with your API key
     this.groq = new Groq({ apiKey: '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' });
   }
-  async getChatCompletion(keyword: string) {
+
+  async getMedicalDescription(keyword: string) {
     try {
       const chatCompletion = await this.groq.chat.completions.create({
         messages: [
           {
             role: "system",
-            content: "You are a food and culinary expert. Respond to queries related to food, ingredients, world cuisines, recipes, and the history of dishes."
+            content: "You are a medical expert. Respond to queries related to medical descriptions, diagnoses, treatments, and doctor's handwriting."
           },
           {
             role: "user",
-            content:`Please provide a recipe for ${keyword}`,
+            content: `Please provide a detailed explanation for the medical description: ${keyword}`,
           },
         ],
         model: "llama3-8b-8192",
@@ -42,15 +43,14 @@ export class GroqService {
       // Step 1: Call Groq's image recognition API
       const imageRecognitionResponse = await this.groq.chat.completions.create({
         messages: [
-          // {
-          //   role: "system",
-          //   content: "You are a culinary expert. Only focus on identifying food items in images. Ignore backgrounds or irrelevant objects."
-          // },
-      
+          {
+            role: "system",
+            content: "You are a medical expert. Focus on identifying and describing medical-related content in images, especially doctor's handwriting. Ignore backgrounds or irrelevant objects."
+          },
           {
             role: 'user',
             content: [
-              { type: 'text', text: "What's in this image?" },
+              { type: 'text', text: "What's the medical description in this image?" },
               {
                 type: 'image_url',
                 image_url: {
@@ -65,25 +65,22 @@ export class GroqService {
 
       const description = imageRecognitionResponse.choices[0]?.message?.content || 'No description';
 
- 
-
-      // Step 3: Call Chat Completion API with the extracted keyword to get the recipe
-      const recipe = await this.getChatCompletion(description);
+      // Step 2: Call Chat Completion API with the extracted keyword to get the detailed medical description
+      const detailedDescription = await this.getMedicalDescription(description);
 
       // Clean up the uploaded image file
       fs.unlinkSync(imagePath);
 
-      // Return both the description and the recipe to the client
+      // Return both the description and the detailed medical description to the client
       return {
         description,
-        recipe,
+        detailedDescription,
       };
     } catch (error) {
       console.error('Error processing image:', error);
       throw new Error('Failed to process image');
     }
   }
-
 
   // Helper function to convert an image file to base64
   private encodeImageToBase64(imagePath: string): string {
